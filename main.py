@@ -1,4 +1,3 @@
-from zipfile import ZipFile
 import pandas as pd
 from sqlalchemy import create_engine
 import streamlit as st
@@ -9,15 +8,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-
-# unzip the zip file by using ZipFile
-with ZipFile("C:\\Retail_order\\orders.csv.zip", 'r') as retail_order:
-
-     retail_order.extractall(path="C:\\Retail_order\\orders")
-
-
 # read the csv file using pandas
-orders_data = pd.read_csv("C:\Retail_order\orders\orders.csv")
+orders_data = pd.read_csv("orders.csv")
 # print(pd.DataFrame(orders_data))
 
 
@@ -30,15 +22,15 @@ orders_data['Order Date'] = pd.to_datetime(orders_data['Order Date'])
 
 
 # Find the null and nan values
-# print(orders_data.isnull().sum())
-# print(orders_data.isna().sum())
-# orders_data.info()
+print(orders_data.isnull().sum())
+print(orders_data.isna().sum())
+orders_data.info()
 
 
 # Find missing value index
-# missing_index = pd.isna(orders_data['Ship Mode'])
-# missing_index = pd.isnull(orders_data['Ship Mode'])
-# print(orders_data[missing_index])
+missing_index = pd.isna(orders_data['Ship Mode'])
+missing_index = pd.isnull(orders_data['Ship Mode'])
+print(orders_data[missing_index])
 
 
 # Rename/Standardize column name
@@ -306,8 +298,6 @@ if st.button('Question 8: Show Region-wise Average Discount Percentage'):
     # Show the plot
     st.plotly_chart(fig)
 
-    # Show the plot
-    st.plotly_chart(fig)
 
 
 # Q9 Highest profit category
@@ -647,4 +637,3 @@ if st.button('Question 20:Show Order ID and Product Category with Profit Ranking
 
 
 connection.close()
-
