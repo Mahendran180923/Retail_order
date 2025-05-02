@@ -1,75 +1,115 @@
-📊 Retail Order Data Analysis
+# 📊 Retail Order Data Analysis
 
-This project is a Streamlit web application that performs a comprehensive analysis on a retail orders dataset sourced from Kaggle. It loads the data from a CSV file, stores it in a PostgreSQL database, and provides interactive visualizations using Plotly to derive business insights.
+A **Streamlit web application** that performs a comprehensive analysis of a retail orders dataset from Kaggle. The app loads data from a CSV file, stores it in a **PostgreSQL** database, and delivers interactive **Plotly visualizations** to uncover key business insights.
 
+---
 
+## 📁 Dataset Source
 
-📁 Dataset Source
-Kaggle Dataset: Retail Orders - by ankitbansal06
+- **Kaggle Dataset:** [Retail Orders by ankitbansal06](https://www.kaggle.com/datasets/ankitbansal06/retail-orders)  
+- **Download via CLI:**
+  ```bash
+  kaggle datasets download ankitbansal06/retail-orders -f orders.csv
+  ```
 
-Download command:
-!kaggle datasets download ankitbansal06/retail-orders -f orders.csv
+---
 
+## 🏗️ Project Structure
 
+```
+├── orders.csv              # Dataset from Kaggle
+├── main.py                 # Streamlit application
+├── README.md               # Project documentation
+```
 
-🏗️ Project Structure
+---
 
-├── orders.csv                # Dataset downloaded from Kaggle
+## ⚙️ Setup Instructions
 
-├── main.py                    # Main Streamlit application
+### 1️⃣ Install Dependencies
 
-├── README.md                 # This documentation file
+Make sure Python is installed, then run:
 
-
-
-⚙️ Setup Instructions
-1. Install Python Dependencies
+```bash
 pip install pandas sqlalchemy psycopg2 streamlit plotly kaggle
+```
 
-Ensure you have a valid kaggle.json API token set up if you're using the Kaggle CLI to download the dataset.
+> **Note:** Set up your `kaggle.json` API token to enable dataset download via Kaggle CLI.
 
+### 2️⃣ Configure PostgreSQL
 
-
-
-2. Set Up PostgreSQL
+Update your PostgreSQL credentials in `main.py`:
+```python
 host = 'localhost'
 user = 'postgres'
 password = 'yourpassword'
-database = 'mdte16db'
+database = 'yourdb'
+```
 
+### 3️⃣ Download the Dataset
 
-
-3. Download the Dataset
+```bash
 kaggle datasets download ankitbansal06/retail-orders -f orders.csv
+```
 
+---
 
-🚀 How to Run
+## 🚀 Run the App
+
+```bash
 streamlit run main.py
+```
 
+This will open the interactive dashboard in your browser.
 
-🧠 Dashboard Features – 20 Key Business Questions Answered
+---
 
-1. Top 10 revenue-generating products
-2. Cities with the highest profit margin
-3. Category-wise total discount
-4. Category-wise average sale price
-5. Region-wise average sales price
-6. Total profit by product category
-7. Top 3 segments with highest quantity of orders
-8. Average discount percentage by region
-9. Sub-category with highest profit
-10. Annual total revenue
-11. Top 10 states by sales percentage
-12. Month-wise year-over-year (YoY) sales growth
-13. Top 5 profit months
-14. Monthly total discount
-15. Segment-wise discount analysis
-16. State-wise total profit
-17. Top 5 discount-heavy cities
-18. States with highest average sale price
-19. Low-margin sub-categories (<10%)
-20. Order-level profit categorization (High/Medium/Low)
+## 🧠 Dashboard Features
 
+The application answers **20 essential business questions** using dynamic visualizations:
 
-📬 Feedback
-Open to suggestions, issues, and pull requests to improve functionality or extend analytics.
+| #  | Business Question |
+|----|-------------------|
+| 1  | Top 10 revenue-generating products |
+| 2  | Cities with the highest profit margin |
+| 3  | Category-wise total discount |
+| 4  | Category-wise average sale price |
+| 5  | Region-wise average sales price |
+| 6  | Total profit by product category |
+| 7  | Top 3 segments with highest quantity of orders |
+| 8  | Average discount percentage by region |
+| 9  | Sub-category with highest profit |
+| 10 | Annual total revenue |
+| 11 | Top 10 states by sales percentage |
+| 12 | Month-wise year-over-year (YoY) sales growth |
+| 13 | Top 5 profit months |
+| 14 | Monthly total discount |
+| 15 | Segment-wise discount analysis |
+| 16 | State-wise total profit |
+| 17 | Top 5 discount-heavy cities |
+| 18 | States with highest average sale price |
+| 19 | Low-margin sub-categories (<10%) |
+| 20 | Order-level profit categorization (High/Medium/Low) |
+
+---
+
+## 💡 Technologies Used
+
+- **Python**
+- **Pandas**
+- **SQLAlchemy**
+- **PostgreSQL**
+- **Streamlit**
+- **Plotly**
+- **Kaggle CLI**
+
+---
+
+## 📬 Feedback & Contributions
+
+We're open to:
+- Suggestions 💡
+- Bug reports 🐞
+- Pull requests 🚀
+
+Feel free to fork the project, improve it, and share your insights!
