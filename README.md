@@ -9,7 +9,7 @@ A **Streamlit web application** that performs a comprehensive analysis of a reta
 - **Kaggle Dataset:** [Retail Orders by ankitbansal06](https://www.kaggle.com/datasets/ankitbansal06/retail-orders)  
 - **Download via CLI:**
   ```bash
-  kaggle datasets download ankitbansal06/retail-orders -f orders.csv
+  kaggle datasets download ankitbansal06/retail-orders
   ```
 
 ---
