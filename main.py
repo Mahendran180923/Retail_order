@@ -1,3 +1,4 @@
+import zipfile 
 import pandas as pd
 from sqlalchemy import create_engine
 import streamlit as st
@@ -7,9 +8,17 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 
+# Unzip the zip file
+zipfile_path = r"D:\Retail_order\retail-orders.zip"
+extract_file_path = r"D:\Retail_order\orders_data"
+
+with zipfile.ZipFile(zipfile_path, "r") as f:
+    f.extractall(extract_file_path)
+
+
 
 # read the csv file using pandas
-orders_data = pd.read_csv("orders.csv")
+orders_data = pd.read_csv("D:\Retail_order\orders_data\orders.csv")
 # print(pd.DataFrame(orders_data))
 
 
@@ -17,19 +26,19 @@ orders_data = pd.read_csv("orders.csv")
 # orders_data.info()
 
 
-# Convert 'order date' from object to datetime
+# Convert 'order date' column datatype from object to datetime
 orders_data['Order Date'] = pd.to_datetime(orders_data['Order Date'])
 
 
 # Find the null and nan values
-print(orders_data.isnull().sum())
-print(orders_data.isna().sum())
-orders_data.info()
+# print(orders_data.isnull().sum())
+# print(orders_data.isna().sum())
+# print(orders_data.info())
 
 
 # Find missing value index
 missing_index = pd.isna(orders_data['Ship Mode'])
-missing_index = pd.isnull(orders_data['Ship Mode'])
+# missing_index = pd.isnull(orders_data['Ship Mode'])
 print(orders_data[missing_index])
 
 
@@ -78,6 +87,9 @@ orders_data['discount'] = orders_data['list_price'] * orders_data['discount_perc
 orders_data['sale_price'] = orders_data['list_price'] - orders_data['discount']
 orders_data['profit'] = orders_data['sale_price'] - orders_data['cost_price']
 # print(pd.DataFrame(orders_data))
+
+
+# Split the data into two separate data frame
 shipping_details = pd.DataFrame(orders_data.iloc[0:,0:9])
 order_details = pd.DataFrame(orders_data)
 sales_details = order_details.loc[:, ['order_id','category','sub_category','product_id','cost_price','list_price','quantity','discount_percentage','discount','sale_price','profit']]
@@ -96,12 +108,14 @@ engine = create_engine(f"postgresql://{user}:{password}@{host}/{database}")
 orders_shipping_details = "shipping_details"
 sales_data = "sales_details"
 
-
+# Send the two tables to SQL DB
 shipping_details.to_sql(orders_shipping_details,engine,if_exists="replace",index=False)
 sales_details.to_sql(sales_data,engine,if_exists="replace",index=False)
 
+# print("success")
 
-print("success")
+
+# Connect with SQL server to query
 connection = psycopg2.connect(
     host = 'localhost',
     user = 'postgres',
@@ -118,6 +132,8 @@ mediator.execute('''alter table sales_details
                  alter column profit type
                  real''', connection)
 
+
+# Create streamlit app for visualisation 
 st.title("Retail Order Data Analysis")
 
 # Q1 highest revenue product
@@ -132,14 +148,9 @@ if st.button('Question 1: Show Top 10 Revenue Products'):
 # Fetch all the rows
     rows = mediator.fetchall()
 
-# Extract the data into separate lists
-    product_ids = [row[0] for row in rows]
-    total_revenues = [row[1] for row in rows]
-
-    
-
 # Create the Plotly chart
     q1 = pd.DataFrame(rows, columns=['Product', 'Total Revenue'])
+    st.write(q1)
     fig = px.bar(q1, x='Product', y='Total Revenue', text='Total Revenue', title='Top 10 Highest Revenue Products')
     st.plotly_chart(fig)
 
@@ -159,6 +170,8 @@ if st.button('Question 2: Show Top 5 Cities by Profit Margin'):
                     LIMIT 5''',
                     connection)
     Q_2 = mediator.fetchall()
+    df = pd.DataFrame(Q_2, columns=['City', 'Profit Margin (%)'])
+    st.write(df)
     cities = [row[0] for row in Q_2]
     profit_margins = [row[1] for row in Q_2]
     fig = px.bar(x=cities, y=profit_margins, text=profit_margins, title='Top 5 Cities by Profit Margin')
@@ -176,6 +189,8 @@ if st.button('Question 3: Show Category-wise Total Discount'):
                     connection)
 
     Q_3 = mediator.fetchall()
+    df = pd.DataFrame(Q_3, columns=['Categories', 'discounts'])
+    st.write(df)
     categories = [row[0] for row in Q_3]
     discounts = [row[1] for row in Q_3]
     fig = px.bar(x=categories, y=discounts, text=discounts, title='Category-wise Total Discount')
@@ -183,6 +198,7 @@ if st.button('Question 3: Show Category-wise Total Discount'):
     fig.update_yaxes(title_text='Total Discount')
     fig.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig)
+
 
 # Q4 Product Category_wise Average Sale Price
 if st.button('Question 4: Show Category-wise Average Sale Price'):
@@ -194,6 +210,8 @@ if st.button('Question 4: Show Category-wise Average Sale Price'):
     connection)
 
     Q_4 = mediator.fetchall()
+    df = pd.DataFrame(Q_4, columns=['categories', 'average_prices'])
+    st.write(df)
     categories = [row[0] for row in Q_4]
     average_prices = [row[1] for row in Q_4]
     fig = px.bar(x=categories, y=average_prices, title='Category-wise Average Sale Price')
@@ -202,6 +220,7 @@ if st.button('Question 4: Show Category-wise Average Sale Price'):
     fig.update_layout(xaxis_tickangle=-45)
     fig.update_traces(textposition='outside', texttemplate='%{y:.2f}')
     st.plotly_chart(fig)
+
 
 # Q5 Region_wise Average Sales Price
 if st.button('Question 5: Show Region-wise Average Sales Price'):
@@ -218,6 +237,7 @@ if st.button('Question 5: Show Region-wise Average Sales Price'):
 
     # Create a Pandas DataFrame
     df = pd.DataFrame(Q_5, columns=['Region', 'Region-wise Average Price'])
+    st.write(df)
 
     # Create a Plotly bar chart
     fig = px.bar(df, x='Region', y='Region-wise Average Price', text='Region-wise Average Price')
@@ -227,6 +247,8 @@ if st.button('Question 5: Show Region-wise Average Sales Price'):
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 # Q6 Category_wise Total Profit
 if st.button('Question 6: Show Category-wise Total Profit'):
@@ -239,6 +261,7 @@ if st.button('Question 6: Show Category-wise Total Profit'):
     Q_6 = mediator.fetchall()
      # Create a Pandas DataFrame
     df = pd.DataFrame(Q_6, columns=['Category', 'Category-wise Total Profit'])
+    st.write(df)
 
     # Create a Plotly bar chart
     fig = px.bar(df, x='Category', y='Category-wise Total Profit', text='Category-wise Total Profit')
@@ -248,6 +271,8 @@ if st.button('Question 6: Show Category-wise Total Profit'):
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 # Q7 Top 3 Highest quantity of order
 if st.button('Question 7: Show Top 3 Segments Highest Quantity of Order'):
@@ -265,6 +290,7 @@ if st.button('Question 7: Show Top 3 Segments Highest Quantity of Order'):
     Q_7 = mediator.fetchall()
      # Create a Pandas DataFrame
     df = pd.DataFrame(Q_7, columns=['Segment', 'Segment-wise Highest Order'])
+    st.write(df)
 
     # Create a Plotly bar chart
     fig = px.bar(df, x='Segment', y='Segment-wise Highest Order', text='Segment-wise Highest Order')
@@ -274,6 +300,8 @@ if st.button('Question 7: Show Top 3 Segments Highest Quantity of Order'):
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 # Q8 Regionw_wise average discount perentage
 if st.button('Question 8: Show Region-wise Average Discount Percentage'):
@@ -290,6 +318,7 @@ if st.button('Question 8: Show Region-wise Average Discount Percentage'):
     Q_8 = mediator.fetchall()
     # Create a Pandas DataFrame
     df = pd.DataFrame(Q_8, columns=['Region', 'Region-wise Average Discount Percentage'])
+    st.write(df)
 
     # Create a Plotly pie chart
     fig = px.pie(df, names='Region', values='Region-wise Average Discount Percentage')
@@ -312,16 +341,17 @@ if st.button('Question 9: Show Highest Profit Category'):
     Q_9 = mediator.fetchall()
 
     df = pd.DataFrame(Q_9, columns=['Sub-Category', 'Highest Profit Category'])
+   
 
     # Display the table
     st.table(df)
 
-mediator.execute('''select category, round(sum(quantity*profit)::numeric,0) as highest_profit_category 
-                 from sales_details
-                 group by category
-                 order by highest_profit_category desc
-                 limit 1''',
-                 connection)
+# mediator.execute('''select category, round(sum(quantity*profit)::numeric,0) as highest_profit_category 
+#                  from sales_details
+#                  group by category
+#                  order by highest_profit_category desc
+#                  limit 1''',
+#                  connection)
 
 
 
@@ -339,7 +369,7 @@ if st.button('Question 10: Show Total Revenue per Year'):
 
      # Create a Pandas DataFrame
     df = pd.DataFrame(Q_10, columns=['Year', 'Total Revenue'])
-
+    st.write(df)
     # Create a Plotly bar chart
     fig = px.bar(df, x='Year', y='Total Revenue', text='Total Revenue')
     fig.update_layout(title='Total Revenue per Year',
@@ -348,6 +378,8 @@ if st.button('Question 10: Show Total Revenue per Year'):
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 # Q11 Top 10 state with highest % of sales
 if st.button('Question 11: Show Top 10 States with Highest % of Sales'):
@@ -368,7 +400,7 @@ if st.button('Question 11: Show Top 10 States with Highest % of Sales'):
 
     # Create a Pandas DataFrame
     df = pd.DataFrame(Q_11, columns=['State', 'Percentage of Sales'])
-
+    st.write(df)
     # Create a Plotly horizontal bar chart
     fig = px.bar(df, x='Percentage of Sales', y='State', text='Percentage of Sales', orientation='h')
     fig.update_layout(title='Top 10 States with Highest % of Sales',
@@ -378,39 +410,66 @@ if st.button('Question 11: Show Top 10 States with Highest % of Sales'):
     # Show the plot
     st.plotly_chart(fig)
 
+
+
 # Q12 Month wise YOY Sales Growth
 if st.button('Question 12: Show Month-wise YOY Sales Growth'):
-    mediator.execute('''SELECT 
-  TO_CHAR(order_date, 'Month') AS month_name, 
-  EXTRACT(YEAR FROM order_date) AS year, 
-  ROUND(SUM(quantity*sale_price)::NUMERIC, 2) AS total_revenue,
-  ROUND(
-    ((ROUND(SUM(quantity*sale_price)::NUMERIC, 2) - 
-      LAG(ROUND(SUM(quantity*sale_price)::NUMERIC, 2), 12) OVER 
-        (ORDER BY EXTRACT(YEAR FROM order_date), EXTRACT(MONTH FROM order_date))) / 
-     LAG(ROUND(SUM(quantity*sale_price)::NUMERIC, 2), 12) OVER 
-       (ORDER BY EXTRACT(YEAR FROM order_date), EXTRACT(MONTH FROM order_date))) * 100::NUMERIC, 
-    2
-  ) AS yoy_growth
-FROM 
-  shipping_details
-JOIN 
-  sales_details 
+    mediator.execute('''WITH monthly_revenue AS (
+  SELECT 
+    TRIM(TO_CHAR(order_date, 'Month')) AS month_name,
+    EXTRACT(MONTH FROM order_date) AS month_number,
+    EXTRACT(YEAR FROM order_date) AS year,
+    ROUND(SUM(quantity * sale_price)::NUMERIC, 2) AS total_revenue
+  FROM 
+    shipping_details
+  JOIN 
+    sales_details 
   ON shipping_details.order_id = sales_details.order_id
-GROUP BY 
-  TO_CHAR(order_date, 'Month'), 
-  EXTRACT(YEAR FROM order_date), 
-  EXTRACT(MONTH FROM order_date)
-ORDER BY 
-  EXTRACT(MONTH FROM order_date);''', connection)
+  GROUP BY 
+    TRIM(TO_CHAR(order_date, 'Month')),
+    EXTRACT(MONTH FROM order_date),
+    EXTRACT(YEAR FROM order_date)
+),
+years AS (
+  SELECT DISTINCT EXTRACT(YEAR FROM order_date) AS year
+  FROM shipping_details
+  ORDER BY year
+  LIMIT 2  ),
+  pivoted AS (
+  SELECT 
+    r.month_name,
+    r.month_number,
+    MAX(CASE WHEN r.year = y1.year THEN r.total_revenue END) AS year_2022,
+    MAX(CASE WHEN r.year = y2.year THEN r.total_revenue END) AS year_2023
+  FROM 
+    monthly_revenue r
+    CROSS JOIN (SELECT MIN(year) AS year FROM years) y1
+    CROSS JOIN (SELECT MAX(year) AS year FROM years) y2
+  GROUP BY 
+    r.month_name,
+    r.month_number)
+SELECT 
+  month_name,
+  year_2022,
+  year_2023,
+  ROUND(
+    CASE 
+    WHEN year_2022 IS NOT NULL AND year_2022 != 0 THEN 
+    ((year_2023 - year_2022) / year_2022) * 100
+    ELSE NULL
+    END, 2) AS growth_percentage
+FROM pivoted
+ORDER BY month_number;''', connection)
 
     Q_12 = mediator.fetchall()
 
     # Create a Pandas DataFrame
     df = pd.DataFrame(Q_12, columns=['Month', 'Year', 'Total Revenue', 'YOY Growth'])
-
+    
     # Display the DataFrame as a table
     st.write(df)
+
+
 
 # Q13 Top 5 highest profit Month with revenue
 if st.button('Question 13: Show Top 5 Highest Profit Months'):
@@ -429,7 +488,7 @@ if st.button('Question 13: Show Top 5 Highest Profit Months'):
 
       # Create a Pandas DataFrame
     df = pd.DataFrame(Q_13, columns=['Month-Year', 'Total Profit'])
-
+    st.write(df)
     # Create a Plotly pie chart
     fig = px.pie(df, values='Total Profit', names='Month-Year')
     fig.update_layout(title='Top 5 Highest Profit Months')
@@ -437,6 +496,8 @@ if st.button('Question 13: Show Top 5 Highest Profit Months'):
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 # Q14 Total discount given for each month
 if st.button('Question 14: Show Total Discount Given for Each Month'):
@@ -457,7 +518,7 @@ if st.button('Question 14: Show Total Discount Given for Each Month'):
 
 # Create a Pandas DataFrame
     df = pd.DataFrame(Q_14, columns=['Month-Year', 'Total Discount'])
-
+    st.write(df)
     # Create a Plotly bar chart
     fig = px.bar(df, x='Month-Year', y='Total Discount', text='Total Discount')
     fig.update_layout(title='Total Discount Given for Each Month',
@@ -466,6 +527,8 @@ if st.button('Question 14: Show Total Discount Given for Each Month'):
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 # Q15 segment wise discount details
 if st.button('Question 15: Show Segment-wise Discount Details'):
@@ -481,7 +544,7 @@ if st.button('Question 15: Show Segment-wise Discount Details'):
 
     # Create a Pandas DataFrame
     df = pd.DataFrame(Q_15, columns=['Segment', 'Total Discount'])
-
+    st.write(df)
     # Create a Plotly pie chart
     fig = px.pie(df, values='Total Discount', names='Segment')
     fig.update_layout(title='Segment-wise Discount Details')
@@ -489,6 +552,8 @@ if st.button('Question 15: Show Segment-wise Discount Details'):
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 # Q16 Top 10 State wise total profit
 if st.button('Question 16: Show State-wise Total Profit'):
@@ -507,7 +572,7 @@ if st.button('Question 16: Show State-wise Total Profit'):
 
      # Create a Pandas DataFrame
     df = pd.DataFrame(Q_16, columns=['State', 'Total Profit'])
-
+    st.write(df)
     fig = px.bar(df, x='State', y='Total Profit', text='Total Profit')
     fig.update_layout(
         title='State-wise Total Profit Ranking Chart',
@@ -517,6 +582,8 @@ if st.button('Question 16: Show State-wise Total Profit'):
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 
 # Q17 Top 5 city with highest total discount 
@@ -534,7 +601,7 @@ if st.button('Question 17: Show Top 5 Cities with Highest Total Discount'):
 
     # Create a Pandas DataFrame
     df = pd.DataFrame(Q_17, columns=['City', 'Total Discount'])
-
+    st.write(df)
     # Create a pie chart
     fig = px.pie(df, values='Total Discount', names='City')
     fig.update_traces(textinfo='label+percent', textposition='inside')
@@ -544,6 +611,8 @@ if st.button('Question 17: Show Top 5 Cities with Highest Total Discount'):
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 # Q18 Top 5 state with highest average sales price 
 if st.button('Question 18: Show Top 5 States with Highest Average Sales Price'):
@@ -564,7 +633,7 @@ if st.button('Question 18: Show Top 5 States with Highest Average Sales Price'):
 
     # Create a Pandas DataFrame
     df = pd.DataFrame(Q_18, columns=['State', 'State-wise Average Price'])
-
+    st.write(df)
      # Create a bar chart with a line
     fig = px.bar(df, x='State', y='State-wise Average Price', text='State-wise Average Price')
     fig.add_scatter(x=df['State'], y=df['State-wise Average Price'], mode='lines+markers', marker=dict(size=10))
@@ -576,6 +645,8 @@ if st.button('Question 18: Show Top 5 States with Highest Average Sales Price'):
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 # Q19 sub_category with less than 10% profit margin 
 if st.button('Question 19: Show Sub-Categories with Less Than 10% Profit Margin'):
@@ -597,7 +668,7 @@ if st.button('Question 19: Show Sub-Categories with Less Than 10% Profit Margin'
 
      # Create a Pandas DataFrame
     df = pd.DataFrame(Q_19, columns=['Sub-Category', 'Lowest Profit Margin'])
-
+    st.write(df)
     # Create a bar chart
     fig = px.bar(df, x='Sub-Category', y='Lowest Profit Margin', text='Lowest Profit Margin')
     fig.update_layout(
@@ -608,6 +679,8 @@ if st.button('Question 19: Show Sub-Categories with Less Than 10% Profit Margin'
 
     # Show the plot
     st.plotly_chart(fig)
+
+
 
 # Q20 Order id and product category with profit ranking
 if st.button('Question 20:Show Order ID and Product Category with Profit Ranking'):
